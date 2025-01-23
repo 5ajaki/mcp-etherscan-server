@@ -1,16 +1,19 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { config } from 'dotenv';
-import { EtherscanService } from './services/etherscanService.js';
-import { z } from 'zod';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
+import { config } from "dotenv";
+import { EtherscanService } from "./services/etherscanService.js";
+import { z } from "zod";
 
 // Load environment variables
 config();
 
 const apiKey = process.env.ETHERSCAN_API_KEY;
 if (!apiKey) {
-  throw new Error('ETHERSCAN_API_KEY environment variable is required');
+  throw new Error("ETHERSCAN_API_KEY environment variable is required");
 }
 
 // Initialize Etherscan service
@@ -31,21 +34,29 @@ const server = new Server(
 
 // Define schemas for validation
 const AddressSchema = z.object({
-  address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address format'),
+  address: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address format"),
 });
 
 const TransactionHistorySchema = z.object({
-  address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address format'),
+  address: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address format"),
   limit: z.number().min(1).max(100).optional(),
 });
 
 const TokenTransferSchema = z.object({
-  address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address format'),
+  address: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address format"),
   limit: z.number().min(1).max(100).optional(),
 });
 
 const ContractSchema = z.object({
-  address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address format'),
+  address: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address format"),
 });
 
 // List available tools
@@ -61,7 +72,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             address: {
               type: "string",
               description: "Ethereum address (0x format)",
-              pattern: "^0x[a-fA-F0-9]{40}$"
+              pattern: "^0x[a-fA-F0-9]{40}$",
             },
           },
           required: ["address"],
@@ -76,13 +87,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             address: {
               type: "string",
               description: "Ethereum address (0x format)",
-              pattern: "^0x[a-fA-F0-9]{40}$"
+              pattern: "^0x[a-fA-F0-9]{40}$",
             },
             limit: {
               type: "number",
               description: "Number of transactions to return (max 100)",
               minimum: 1,
-              maximum: 100
+              maximum: 100,
             },
           },
           required: ["address"],
@@ -97,13 +108,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             address: {
               type: "string",
               description: "Ethereum address (0x format)",
-              pattern: "^0x[a-fA-F0-9]{40}$"
+              pattern: "^0x[a-fA-F0-9]{40}$",
             },
             limit: {
               type: "number",
               description: "Number of transfers to return (max 100)",
               minimum: 1,
-              maximum: 100
+              maximum: 100,
             },
           },
           required: ["address"],
@@ -118,7 +129,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             address: {
               type: "string",
               description: "Contract address (0x format)",
-              pattern: "^0x[a-fA-F0-9]{40}$"
+              pattern: "^0x[a-fA-F0-9]{40}$",
             },
           },
           required: ["address"],
@@ -141,7 +152,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             address: {
               type: "string",
               description: "Ethereum address (0x format)",
-              pattern: "^0x[a-fA-F0-9]{40}$"
+              pattern: "^0x[a-fA-F0-9]{40}$",
             },
           },
           required: ["address"],
@@ -165,7 +176,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       };
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new Error(`Invalid input: ${error.errors.map(e => e.message).join(", ")}`);
+        throw new Error(
+          `Invalid input: ${error.errors.map((e) => e.message).join(", ")}`
+        );
       }
       throw error;
     }
@@ -174,27 +187,37 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (name === "get-transactions") {
     try {
       const { address, limit } = TransactionHistorySchema.parse(args);
-      const transactions = await etherscanService.getTransactionHistory(address, limit);
-      const formattedTransactions = transactions.map(tx => {
-        const date = new Date(tx.timestamp * 1000).toLocaleString();
-        return `Block ${tx.blockNumber} (${date}):\n` +
-               `Hash: ${tx.hash}\n` +
-               `From: ${tx.from}\n` +
-               `To: ${tx.to}\n` +
-               `Value: ${tx.value} ETH\n` +
-               `---`;
-      }).join('\n');
+      const transactions = await etherscanService.getTransactionHistory(
+        address,
+        limit
+      );
+      const formattedTransactions = transactions
+        .map((tx) => {
+          const date = new Date(tx.timestamp * 1000).toLocaleString();
+          return (
+            `Block ${tx.blockNumber} (${date}):\n` +
+            `Hash: ${tx.hash}\n` +
+            `From: ${tx.from}\n` +
+            `To: ${tx.to}\n` +
+            `Value: ${tx.value} ETH\n` +
+            `---`
+          );
+        })
+        .join("\n");
 
-      const response = transactions.length > 0
-        ? `Recent transactions for ${address}:\n\n${formattedTransactions}`
-        : `No transactions found for ${address}`;
+      const response =
+        transactions.length > 0
+          ? `Recent transactions for ${address}:\n\n${formattedTransactions}`
+          : `No transactions found for ${address}`;
 
       return {
         content: [{ type: "text", text: response }],
       };
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new Error(`Invalid input: ${error.errors.map(e => e.message).join(", ")}`);
+        throw new Error(
+          `Invalid input: ${error.errors.map((e) => e.message).join(", ")}`
+        );
       }
       throw error;
     }
@@ -203,28 +226,38 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (name === "get-token-transfers") {
     try {
       const { address, limit } = TokenTransferSchema.parse(args);
-      const transfers = await etherscanService.getTokenTransfers(address, limit);
-      const formattedTransfers = transfers.map(tx => {
-        const date = new Date(tx.timestamp * 1000).toLocaleString();
-        return `Block ${tx.blockNumber} (${date}):\n` +
-               `Token: ${tx.tokenName} (${tx.tokenSymbol})\n` +
-               `From: ${tx.from}\n` +
-               `To: ${tx.to}\n` +
-               `Value: ${tx.value}\n` +
-               `Contract: ${tx.token}\n` +
-               `---`;
-      }).join('\n');
+      const transfers = await etherscanService.getTokenTransfers(
+        address,
+        limit
+      );
+      const formattedTransfers = transfers
+        .map((tx) => {
+          const date = new Date(tx.timestamp * 1000).toLocaleString();
+          return (
+            `Block ${tx.blockNumber} (${date}):\n` +
+            `Token: ${tx.tokenName} (${tx.tokenSymbol})\n` +
+            `From: ${tx.from}\n` +
+            `To: ${tx.to}\n` +
+            `Value: ${tx.value}\n` +
+            `Contract: ${tx.token}\n` +
+            `---`
+          );
+        })
+        .join("\n");
 
-      const response = transfers.length > 0
-        ? `Recent token transfers for ${address}:\n\n${formattedTransfers}`
-        : `No token transfers found for ${address}`;
+      const response =
+        transfers.length > 0
+          ? `Recent token transfers for ${address}:\n\n${formattedTransfers}`
+          : `No token transfers found for ${address}`;
 
       return {
         content: [{ type: "text", text: response }],
       };
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new Error(`Invalid input: ${error.errors.map(e => e.message).join(", ")}`);
+        throw new Error(
+          `Invalid input: ${error.errors.map((e) => e.message).join(", ")}`
+        );
       }
       throw error;
     }
@@ -235,11 +268,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { address } = ContractSchema.parse(args);
       const abi = await etherscanService.getContractABI(address);
       return {
-        content: [{ type: "text", text: `Contract ABI for ${address}:\n\n${abi}` }],
+        content: [
+          { type: "text", text: `Contract ABI for ${address}:\n\n${abi}` },
+        ],
       };
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new Error(`Invalid input: ${error.errors.map(e => e.message).join(", ")}`);
+        throw new Error(
+          `Invalid input: ${error.errors.map((e) => e.message).join(", ")}`
+        );
       }
       throw error;
     }
@@ -248,10 +285,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (name === "get-gas-prices") {
     try {
       const prices = await etherscanService.getGasOracle();
-      const response = `Current Gas Prices:\n` +
-                      `Safe Low: ${prices.safeGwei} Gwei\n` +
-                      `Standard: ${prices.proposeGwei} Gwei\n` +
-                      `Fast: ${prices.fastGwei} Gwei`;
+      const response =
+        `Current Gas Prices:\n` +
+        `Safe Low: ${prices.safeGwei} Gwei\n` +
+        `Standard: ${prices.proposeGwei} Gwei\n` +
+        `Fast: ${prices.fastGwei} Gwei`;
       return {
         content: [{ type: "text", text: response }],
       };
@@ -272,7 +310,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       };
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new Error(`Invalid input: ${error.errors.map(e => e.message).join(", ")}`);
+        throw new Error(
+          `Invalid input: ${error.errors.map((e) => e.message).join(", ")}`
+        );
       }
       throw error;
     }
@@ -284,6 +324,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 // Start the server
 export async function startServer() {
   const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("Etherscan MCP Server running on stdio");
-} 
+  try {
+    await server.connect(transport);
+    console.error("Server started successfully");
+  } catch (error) {
+    console.error("Error starting server:", error);
+    throw error;
+  }
+}
